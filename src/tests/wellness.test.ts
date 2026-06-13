@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { validateInput } from "../utils/validation";
 import type { JournalInput } from "../utils/validation";
-import { buildPrompt } from "../../netlify/functions/analyze";
+import { buildPrompt } from "../utils/gemini";
 import type { AnalysisResult } from "../utils/gemini";
 
 describe("EXAMMIND AI - Mental Wellness Tracker Tests", () => {
@@ -80,31 +80,26 @@ describe("EXAMMIND AI - Mental Wellness Tracker Tests", () => {
   });
 
   describe("Prompt Generation", () => {
-    it("should format the prompt correctly with multiple entries", () => {
-      const input = {
+    it("should format the prompt correctly with all inputs", () => {
+      const input: JournalInput = {
         name: "Aman",
-        entries: [
-          {
-            id: "1",
-            date: "2026-06-13",
-            examType: "GATE",
-            daysRemaining: 15,
-            moodScore: 5,
-            energyScore: 4,
-            stressScore: 8,
-            journalEntry: "Struggling with maths syllabus revision."
-          }
-        ]
+        examType: "GATE",
+        daysRemaining: 15,
+        moodScore: 5,
+        energyScore: 4,
+        stressScore: 8,
+        journalEntry: "Struggling with maths syllabus revision."
       };
 
       const prompt = buildPrompt(input);
-      expect(prompt).toContain("Aman");
-      expect(prompt).toContain("GATE");
-      expect(prompt).toContain("15 days");
+      expect(prompt).toContain("Student Name: Aman");
+      expect(prompt).toContain("Exam Preparing For: GATE");
+      expect(prompt).toContain("Days Remaining Until Exam: 15 days");
       expect(prompt).toContain("Mood Score (1-10): 5");
       expect(prompt).toContain("Energy Score (1-10): 4");
-      expect(prompt).toContain("Stress Score (1-10): 8");
+      expect(prompt).toContain("Stress Level (1-10): 8");
       expect(prompt).toContain("Struggling with maths syllabus revision.");
+      expect(prompt).toContain("JSON format");
     });
   });
 
@@ -113,28 +108,17 @@ describe("EXAMMIND AI - Mental Wellness Tracker Tests", () => {
     const simulateParse = (jsonString: string): AnalysisResult => {
       const parsed = JSON.parse(jsonString);
       if (
-        !parsed.currentState ||
-        typeof parsed.currentState.emotionalHealthScore !== "number" ||
-        !["Low", "Moderate", "High"].includes(parsed.currentState.burnoutRisk) ||
-        !["Stable", "Improving", "Declining"].includes(parsed.currentState.confidenceTrend) ||
-        !parsed.rootCauseAnalysis ||
-        typeof parsed.rootCauseAnalysis.primaryRootCause !== "string" ||
-        !["Low", "Medium", "High"].includes(parsed.rootCauseAnalysis.confidenceImpact) ||
-        typeof parsed.rootCauseAnalysis.observedIn !== "string" ||
-        !Array.isArray(parsed.rootCauseAnalysis.typicalTriggerSequence) ||
-        !parsed.rootCauseAnalysis.patternConfidence ||
-        typeof parsed.rootCauseAnalysis.patternConfidence.percentage !== "number" ||
-        typeof parsed.rootCauseAnalysis.patternConfidence.reason !== "string" ||
-        !Array.isArray(parsed.evidence) ||
-        !parsed.interventionForecast ||
-        typeof parsed.interventionForecast.expectedOutcome !== "string" ||
-        typeof parsed.interventionForecast.suggestedIntervention !== "string" ||
-        !parsed.whatToDoNext ||
-        typeof parsed.whatToDoNext.immediateAction !== "string" ||
-        typeof parsed.whatToDoNext.next7Days !== "string" ||
-        typeof parsed.whatToDoNext.longTermAdjustment !== "string" ||
-        typeof parsed.coachReflection !== "string" ||
-        typeof parsed.distressWarningDetected !== "boolean"
+        typeof parsed.emotionalSummary !== "string" ||
+        !Array.isArray(parsed.detectedTriggers) ||
+        typeof parsed.patternAnalysis !== "string" ||
+        !parsed.riskAssessment ||
+        !["Low Risk", "Moderate Risk", "High Risk"].includes(parsed.riskAssessment.level) ||
+        !Array.isArray(parsed.copingStrategies) ||
+        typeof parsed.motivation !== "string" ||
+        !parsed.actionPlan ||
+        typeof parsed.actionPlan.today !== "string" ||
+        typeof parsed.actionPlan.thisWeek !== "string" ||
+        typeof parsed.actionPlan.beforeExam !== "string"
       ) {
         throw new Error("API response JSON structure is invalid or incomplete.");
       }
@@ -143,56 +127,34 @@ describe("EXAMMIND AI - Mental Wellness Tracker Tests", () => {
 
     it("should successfully parse valid JSON matching structure", () => {
       const validJson = JSON.stringify({
-        currentState: {
-          emotionalHealthScore: 6,
-          burnoutRisk: "Moderate",
-          confidenceTrend: "Declining"
+        emotionalSummary: "Experiencing stress and performance pressure.",
+        detectedTriggers: ["mock test score", "revision load"],
+        patternAnalysis: "Peers comparison loop.",
+        riskAssessment: {
+          level: "Moderate Risk",
+          reasoning: "High stress score (8/10) and performance anxiety."
         },
-        rootCauseAnalysis: {
-          primaryRootCause: "Peer Comparison",
-          confidenceImpact: "High",
-          observedIn: "5 of 7 entries",
-          typicalTriggerSequence: [
-            "Mock Test Result",
-            "Comparison With Friends",
-            "Confidence Drop"
-          ],
-          patternConfidence: {
-            percentage: 87,
-            reason: "Pattern observed across 6 entries."
-          }
+        copingStrategies: ["Mindful breathing", "Process goal planning"],
+        motivation: "You are doing great, take it one step at a time.",
+        actionPlan: {
+          today: "Review only one topic.",
+          thisWeek: "Setup a sleep schedule.",
+          beforeExam: "Take mock tests in simulated exam conditions."
         },
-        evidence: [
-          "Trigger mapping shows mock test pressure accounts for 45% of stress",
-          "Comparison with friends mentioned in 4 separate entries"
-        ],
-        interventionForecast: {
-          expectedOutcome: "Increased burnout risk.",
-          suggestedIntervention: "Reduce peer comparison."
-        },
-        whatToDoNext: {
-          immediateAction: "Take deep breath",
-          next7Days: "Review goals",
-          longTermAdjustment: "Personal benchmark"
-        },
-        coachReflection: "Insightful reflection",
         distressWarningDetected: false
       });
 
       const parsed = simulateParse(validJson);
-      expect(parsed.currentState.burnoutRisk).toBe("Moderate");
+      expect(parsed.riskAssessment.level).toBe("Moderate Risk");
       expect(parsed.distressWarningDetected).toBe(false);
-      expect(parsed.rootCauseAnalysis.primaryRootCause).toBe("Peer Comparison");
-      expect(parsed.rootCauseAnalysis.patternConfidence.percentage).toBe(87);
+      expect(parsed.detectedTriggers).toContain("mock test score");
     });
 
     it("should throw error for incomplete JSON structures", () => {
       const invalidJson = JSON.stringify({
-        currentState: {
-          emotionalHealthScore: 6
-          // missing burnoutRisk, confidenceTrend
-        },
-        coachReflection: "Keep going."
+        emotionalSummary: "Experiencing stress.",
+        // missing detectedTriggers, riskAssessment, etc.
+        motivation: "Keep going."
       });
 
       expect(() => simulateParse(invalidJson)).toThrow();
@@ -200,32 +162,20 @@ describe("EXAMMIND AI - Mental Wellness Tracker Tests", () => {
 
     it("should throw error for invalid risk assessment levels", () => {
       const invalidJson = JSON.stringify({
-        currentState: {
-          emotionalHealthScore: 7,
-          burnoutRisk: "Critical", // Invalid level
-          confidenceTrend: "Stable"
+        emotionalSummary: "Feeling okay.",
+        detectedTriggers: [],
+        patternAnalysis: "None",
+        riskAssessment: {
+          level: "Critical Risk", // Invalid level
+          reasoning: "None"
         },
-        rootCauseAnalysis: {
-          primaryRootCause: "None",
-          confidenceImpact: "High",
-          observedIn: "1 entry",
-          typicalTriggerSequence: [],
-          patternConfidence: {
-            percentage: 50,
-            reason: "None"
-          }
+        copingStrategies: [],
+        motivation: "Keep going.",
+        actionPlan: {
+          today: "None",
+          thisWeek: "None",
+          beforeExam: "None"
         },
-        evidence: [],
-        interventionForecast: {
-          expectedOutcome: "None",
-          suggestedIntervention: "None"
-        },
-        whatToDoNext: {
-          immediateAction: "None",
-          next7Days: "None",
-          longTermAdjustment: "None"
-        },
-        coachReflection: "Keep going.",
         distressWarningDetected: false
       });
 

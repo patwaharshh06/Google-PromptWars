@@ -1,88 +1,126 @@
-# FreeMind AI
+# EXAMMIND AI
 
-FreeMind AI is a polished **AI Mental Wellness Copilot for Competitive Exams** designed for students preparing for high-pressure examinations (such as JEE, NEET, UPSC, CAT, CUET, GATE). 
-
-Unlike standard mood trackers or journal apps that simply tell you *how* you feel, FreeMind's core USP is:
-> **"Most wellness apps tell you how you feel. FreeMind tells you WHY you keep feeling that way."**
-
-FreeMind operates as an **AI-powered Emotional Pattern Intelligence & Root Cause Engine**, analyzing emotional cycles across multiple journal entries over time to uncover hidden stress triggers, typical trigger sequence flows, pattern confidence ratings, and intervention forecasts.
+An AI-powered mental wellness companion for students preparing for high-pressure competitive exams (like JEE, NEET, UPSC, CAT, CUET, GATE).
 
 ---
 
-## 1. Core Features & User Experience
+## 1. Problem Statement
 
-1. **Today's Check-in**: A conversational logging form collecting name, exam type, days remaining, mood/stamina/stress scores (1-10), and an open-ended journal log.
-2. **Logs Timeline**: Chronological record of logged entries saved securely in the browser's local storage.
-3. **AI Guided Intervention Center**:
-   - **Your Current State**: Three compact metrics displaying Emotional Health Score (out of 10), Burnout Risk (Low, Moderate, High), and Confidence Trend (Stable, Improving, Declining).
-   - **Root Cause Analysis (Hero Discovery Card)**: Highlights the primary root cause of the student's stress (e.g. Peer Comparison, Syllabus Overload, Fear of Failure), confidence impact level, observed frequency, typical trigger sequence flows, and a verification confidence percentage.
-   - **Why FreeMind Believes This**: A list of 3 specific evidence points derived from journal logs.
-   - **What To Do Next (Intervention Forecast)**: Predicts expected outcomes if the stress pattern continues and provides concrete actions (Immediate Action, Next 7 Days, Long-Term Adjustment).
-   - **Coach Reflection**: One short, powerful, 1-2 sentence AI coach quote for daily encouragement.
-4. **Severe Distress Care**: Auto-detects crisis keywords to render visible support cards referencing national helplines (Tele-MANAS, Kiran, Vandrevala Foundation, Sneha India).
+Students preparing for high-pressure competitive examinations often suffer from severe stress, burnout, anxiety, self-doubt, emotional exhaustion, fear of failure, and a lack of motivation. Most wellness trackers only collect numeric mood scores and fail to understand the complex study-pressure dynamics or the "why" behind the emotions. 
+
+ExamMind AI bridges this gap by leveraging Generative AI to analyze open-ended student journals, detect emotional patterns, identify hidden stress triggers, classify risk levels, and provide actionable, contextual coping strategies.
 
 ---
 
-## 2. Architecture & Security
+## 2. Solution Overview
 
-FreeMind follows a secure, serverless architecture that prevents client-side exposure of API keys:
+ExamMind AI is a secure, single-page React + TypeScript web application powered by **Google Gemini 1.5 Flash**. The core user journey consists of:
+1. **Input Metrics**: Student name (optional), competitive exam type, days remaining until the exam, mood score (1-10), energy score (1-10), and stress score (1-10).
+2. **Daily Journal**: An open-ended text input where students write about their preparation, self-doubt, study logs, or external pressure.
+3. **AI Analysis & Recommendations**: The application securely calls the Gemini Flash API using structured JSON output to analyze the entry.
+4. **Emotional Feedback**:
+   - **Emotional Summary**: Comprehensive description of current emotional state.
+   - **Stress Trigger Detection**: Lists specific factors causing anxiety (e.g. mock tests, peer comparison, time constraint).
+   - **Emotional Patterns**: Identifies recurring themes (e.g., self-comparison loops).
+   - **Risk Assessment**: Classifies the student's wellbeing into Low, Moderate, or High Risk, providing detailed reasoning.
+   - **Personalized Coping Strategies**: Context-aware, actionable advice.
+   - **Encouragement**: Compassionate, realistic motivation avoiding toxic positivity.
+   - **Mindful Action Plan**: Today (small immediate step), This Week (improvement action), and Before Exam (long-term mindset/prep advice).
+5. **Severe Distress Care**: If extreme distress is detected, a highly visible, compassionate support card is displayed containing India's national mental health helpline contacts (Tele-MANAS, Sneha, Vandrevala Foundation).
+
+---
+
+## 3. Architecture
+
+The application is built on a decoupled, lightweight client-side structure focusing on correctness, security, accessibility, and high performance:
 
 ```
-Frontend (React + TypeScript)
-        ↓
-Serverless API Endpoint (/api/analyze)
-        ↓  [Secure Server-Side GEMINI_API_KEY]
-Google Gemini API (1.5 Flash Model)
+├── .env.example             # Template for API Key configuration
+├── .gitignore               # Blocklist for secrets (.env, node_modules, dist)
+├── index.html               # Main HTML wrapper (semantic, accessible setup)
+├── package.json             # Core dependencies (Vite, React, Gemini SDK, Lucide)
+├── tsconfig.json            # Strict TypeScript configuration
+├── src/
+│   ├── main.tsx             # Application mount point
+│   ├── App.tsx              # State orchestrator, error handling, layout control
+│   ├── index.css            # Unified typography, dark slate variables, layout styles
+│   ├── App.css              # Cleared config styles (empty)
+│   ├── components/
+│   │   ├── Header.tsx       # Header banner & Gemini API config modal
+│   │   ├── JournalForm.tsx  # Form input validation and radio button scoring
+│   │   └── AnalysisReport.tsx # Structured report card display with helpline support
+│   ├── utils/
+│   │   ├── gemini.ts        # Gemini AI SDK client, system prompts, JSON parsing
+│   │   └── validation.ts    # Form input schema validation logic
+│   └── tests/
+│       └── wellness.test.ts # Focused vitest suite for validation, prompts, and parsing
 ```
-
-- **Frontend**: Lightweight React SPA bundled using Vite. Never exposes or stores the Gemini API key.
-- **Backend API**: Netlify Function hosted at `netlify/functions/analyze.ts` (mapped to `/api/analyze` locally and in production). Securely retrieves `GEMINI_API_KEY` from environment variables, queries Gemini with strict JSON schema structures, and validates the response schema.
 
 ---
 
-## 3. Environment Variables
+## 4. Environment Variables
 
-To configure the application, define the following environment variable on your hosting provider or in a local `.env` file at the project root:
+To prevent hardcoding secrets, ExamMind AI uses environment variables. 
+Create a `.env` file in the root directory and define the following key:
 
 ```env
-GEMINI_API_KEY=your_google_gemini_api_key_here
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
 ```
+
+*Note: If the key is not set in the `.env` file, the application features an in-app **API Settings** panel in the header where users can input and save their Gemini API key securely in their browser's local storage.*
 
 ---
 
-## 4. Local Development
+## 5. Setup Instructions
 
 Ensure you have **Node.js** (v20+) and **npm** installed.
 
-1. Install dependencies:
+1. Clone or download the repository files.
+2. Open a terminal in the root directory and install dependencies:
    ```bash
    npm install
    ```
-2. Start the local development server:
+3. (Optional) Run the local development server:
    ```bash
    npm run dev
    ```
-   *Note: Vite config proxy is pre-configured so that calls to `/api/analyze` are automatically served locally using the serverless handler code, loading credentials securely from the `.env` file.*
-3. Open `http://localhost:5173` in your browser.
+4. Access the web app in your browser at `http://localhost:5173`.
 
 ---
 
-## 5. Testing
+## 6. Build Instructions
 
-To run the automated vitest suite verifying input validation, prompt formatting, response parsing, and risk calculations:
-
-```bash
-npx vitest run
-```
-
----
-
-## 6. Build & Production Deployment
-
-To compile and build optimized, production-ready static assets:
+To build the static application bundle for production:
 
 ```bash
 npm run build
 ```
 
-The compiled SPA assets will be saved in `dist/`. The Netlify Functions will compile under `netlify/functions/`. Specify the build folder as `dist` and deploy to Netlify or other serverless hosting providers.
+This compiles TypeScript code and bundles optimized CSS and JS assets into the `dist` directory. The production bundle size is extremely small and light (~250 KB in total).
+
+---
+
+## 7. Testing Instructions
+
+To run the automated test suite testing validation logic, prompt structure, risk classification, and response parsing:
+
+```bash
+npm test
+# Or to run once:
+npx vitest run
+```
+
+---
+
+## 8. Deployment Instructions
+
+This application is fully client-side and can be hosted on any static hosting provider (GitHub Pages, Netlify, Vercel, Firebase Hosting):
+
+### Deploying to Netlify (CLI)
+1. Install Netlify CLI: `npm install -g netlify-cli`
+2. Build the app: `npm run build`
+3. Deploy the build: `netlify deploy --dir=dist --prod`
+
+### Deploying to Vercel (CLI)
+1. Install Vercel CLI: `npm install -g vercel`
+2. Run deploy command: `vercel --prod` (specify the build output directory as `dist` when prompted)

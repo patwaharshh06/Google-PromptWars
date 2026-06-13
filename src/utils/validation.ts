@@ -8,16 +8,6 @@ export interface JournalInput {
   journalEntry: string;
 }
 
-export interface HistoryJournalEntry extends JournalInput {
-  id: string;
-  date: string; // ISO date string or date label
-}
-
-export interface PatternAnalysisRequest {
-  name?: string;
-  entries: HistoryJournalEntry[];
-}
-
 export interface ValidationErrors {
   name?: string;
   examType?: string;
