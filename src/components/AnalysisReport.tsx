@@ -1,53 +1,54 @@
 import { useState } from "react";
 import type { AnalysisResult } from "../utils/gemini";
-import type { JournalInput } from "../utils/validation";
 import { 
   AlertTriangle, 
-  Smile, 
-  TrendingUp, 
-  Heart, 
-  Calendar, 
   RefreshCw,
   Copy,
   Check,
-  BookOpen
+  ArrowRight,
+  ShieldAlert,
+  Sparkles,
+  Info
 } from "lucide-react";
 
 interface AnalysisReportProps {
   result: AnalysisResult;
-  scanInput: JournalInput | null;
+  entriesCount: number;
   onReset: () => void;
 }
 
-export function AnalysisReport({ result, scanInput, onReset }: AnalysisReportProps) {
+export function AnalysisReport({ result, entriesCount, onReset }: AnalysisReportProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    const textToCopy = `FREEMIND WELLBEING REPORT
+    const textToCopy = `FREEMIND AI PATTERN INTELLIGENCE REPORT
 =========================================
-EMOTIONAL SUMMARY:
-${result.emotionalSummary}
+ANALYZED LOGS: ${entriesCount} entries
 
-DETECTED TRIGGERS:
-${result.detectedTriggers.map((t) => `- ${t}`).join("\n")}
+1. YOUR CURRENT STATE
+- Emotional Health Score: ${result.currentState.emotionalHealthScore}/10
+- Burnout Risk: ${result.currentState.burnoutRisk}
+- Confidence Trend: ${result.currentState.confidenceTrend}
 
-PATTERN ANALYSIS:
-${result.patternAnalysis}
+2. ROOT CAUSE ANALYSIS
+- Primary Root Cause: ${result.rootCauseAnalysis.primaryRootCause}
+- Confidence Impact: ${result.rootCauseAnalysis.confidenceImpact}
+- Observed In: ${result.rootCauseAnalysis.observedIn}
+- Pattern Confidence: ${result.rootCauseAnalysis.patternConfidence.percentage}% (${result.rootCauseAnalysis.patternConfidence.reason})
+- Typical Trigger Sequence: ${result.rootCauseAnalysis.typicalTriggerSequence.join(" -> ")}
 
-RISK ASSESSMENT:
-Level: ${result.riskAssessment.level}
-Reasoning: ${result.riskAssessment.reasoning}
+3. WHY FREEMIND BELIEVES THIS (EVIDENCE)
+${result.evidence.map((e) => `- ${e}`).join("\n")}
 
-COPING STRATEGIES:
-${result.copingStrategies.map((s) => `- ${s}`).join("\n")}
+4. INTERVENTION FORECAST & ACTION
+- Expected Outcome: ${result.interventionForecast.expectedOutcome}
+- Suggested Intervention: ${result.interventionForecast.suggestedIntervention}
+- Immediate Action: ${result.whatToDoNext.immediateAction}
+- Next 7 Days: ${result.whatToDoNext.next7Days}
+- Long-Term Adjustment: ${result.whatToDoNext.longTermAdjustment}
 
-MOTIVATION COACH:
-${result.motivation}
-
-ACTION ROADMAP:
-- Today: ${result.actionPlan.today}
-- This Week: ${result.actionPlan.thisWeek}
-- Before Exam: ${result.actionPlan.beforeExam}
+5. COACH REFLECTION
+"${result.coachReflection}"
 =========================================`;
 
     try {
@@ -55,49 +56,49 @@ ACTION ROADMAP:
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy text:", err);
+      console.error("Failed to copy report text:", err);
     }
   };
 
-  const getRiskBadgeColor = (level: "Low Risk" | "Moderate Risk" | "High Risk") => {
+  const getBurnoutBadgeColor = (level: "Low" | "Moderate" | "High") => {
     switch (level) {
-      case "Low Risk":
+      case "Low":
         return "risk-badge-low";
-      case "Moderate Risk":
+      case "Moderate":
         return "risk-badge-medium";
-      case "High Risk":
+      case "High":
         return "risk-badge-high";
       default:
         return "";
     }
   };
 
-  const getEmotionalStateIndicator = (level: "Low Risk" | "Moderate Risk" | "High Risk") => {
-    switch (level) {
-      case "Low Risk":
-        return { text: "Calm & Focused", colorClass: "state-calm" };
-      case "Moderate Risk":
-        return { text: "Unsettled & Stressed", colorClass: "state-unsettled" };
-      case "High Risk":
-        return { text: "Highly Strained / Overloaded", colorClass: "state-strained" };
+  const getTrendBadgeColor = (trend: "Stable" | "Improving" | "Declining") => {
+    switch (trend) {
+      case "Improving":
+        return "trend-badge-improving";
+      case "Stable":
+        return "trend-badge-stable";
+      case "Declining":
+        return "trend-badge-declining";
       default:
-        return { text: "Stable", colorClass: "" };
+        return "";
     }
   };
 
-  const emotionalState = getEmotionalStateIndicator(result.riskAssessment.level);
-
   return (
-    <div className="analysis-report" role="region" aria-label="FreeMind Wellness Report">
+    <div className="analysis-report" role="region" aria-label="FreeMind AI Guided Intervention Center">
       
       <div className="report-header">
         <div>
-          <h2>Your Personal Wellbeing Report</h2>
-          {scanInput && (
-            <p className="report-meta">
-              Prepared for {scanInput.name || "Anonymous Student"} • {scanInput.examType} Exam ({scanInput.daysRemaining} days left)
-            </p>
-          )}
+          <span className="pattern-badge-sparkle">
+            <Sparkles size={12} className="spark-icon" />
+            <span>AI Guided Intervention Center</span>
+          </span>
+          <h2>Your Emotional Pattern Intelligence</h2>
+          <p className="report-meta">
+            Analyzing cycles across {entriesCount} logged wellbeing entries
+          </p>
         </div>
         <div className="report-actions">
           <button
@@ -113,17 +114,17 @@ ACTION ROADMAP:
             ) : (
               <>
                 <Copy className="btn-icon" aria-hidden="true" />
-                <span>Copy Report</span>
+                <span>Copy Summary</span>
               </>
             )}
           </button>
           <button
             onClick={onReset}
             className="btn btn-secondary action-btn"
-            aria-label="Start a new analysis scan"
+            aria-label="Clear analysis result"
           >
             <RefreshCw className="btn-icon" aria-hidden="true" />
-            <span>Scan Again</span>
+            <span>Reset</span>
           </button>
         </div>
       </div>
@@ -133,10 +134,10 @@ ACTION ROADMAP:
         <div className="distress-card" role="alert" aria-live="assertive">
           <div className="distress-title">
             <AlertTriangle className="distress-icon" aria-hidden="true" />
-            <h3>Important Notice: Professional Support Available</h3>
+            <h3>Important Notice: Support Resources Available</h3>
           </div>
           <p className="distress-message">
-            Our AI detected signs of extreme stress, burnout, or deep anxiety. Please remember that you do not have to carry this alone. You are valuable, and your mental health is far more important than any examination.
+            Our AI analysis detected signs of extreme stress, burnout, or exam-related distress. Please know that your health is always the highest priority. You do not have to carry this pressure alone.
           </p>
           <div className="distress-actions">
             <p className="distress-prompt">
@@ -160,177 +161,177 @@ ACTION ROADMAP:
         </div>
       )}
 
-      {/* Wellness Score Visualization (Lightweight visual metrics bars) */}
-      {scanInput && (
-        <section className="wellness-scores-overview" aria-label="Wellbeing Scores Overview">
-          <div className="overview-header">
-            <h3>Daily Metrics Overview</h3>
-            <p className="overview-sub">Visual representation of your self-scored metrics</p>
+      {/* SECTION 1: Your Current State */}
+      <section className="current-state-section">
+        <h3 className="section-title-label">Your Current State</h3>
+        <div className="current-state-grid">
+          <div className="state-card-compact">
+            <span className="state-card-title">Emotional Health</span>
+            <div className="state-card-value-container">
+              <span className="state-card-number">{result.currentState.emotionalHealthScore}</span>
+              <span className="state-card-max">/10</span>
+            </div>
+            <span className="state-card-sub">Recent emotional health score</span>
           </div>
-          <div className="overview-grid">
-            <div className="overview-metric-card mood">
-              <div className="metric-info">
-                <span className="metric-name">Mood State</span>
-                <span className="metric-val">{scanInput.moodScore} / 10</span>
-              </div>
-              <div className="metric-bar-bg">
-                <div className="metric-bar-fill" style={{ width: `${scanInput.moodScore * 10}%` }}></div>
-              </div>
-            </div>
-            <div className="overview-metric-card energy">
-              <div className="metric-info">
-                <span className="metric-name">Energy & Stamina</span>
-                <span className="metric-val">{scanInput.energyScore} / 10</span>
-              </div>
-              <div className="metric-bar-bg">
-                <div className="metric-bar-fill" style={{ width: `${scanInput.energyScore * 10}%` }}></div>
-              </div>
-            </div>
-            <div className="overview-metric-card stress">
-              <div className="metric-info">
-                <span className="metric-name">Preparation Stress</span>
-                <span className="metric-val">{scanInput.stressScore} / 10</span>
-              </div>
-              <div className="metric-bar-bg">
-                <div className="metric-bar-fill" style={{ width: `${scanInput.stressScore * 10}%` }}></div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
-      <div className="report-grid">
-        {/* Card 1: Mental Snapshot */}
-        <section className="report-card">
-          <div className="card-header">
-            <Smile className="card-icon" aria-hidden="true" />
-            <h3>Mental Snapshot</h3>
-          </div>
-          <div className="card-body">
-            <div className="emotional-state-container">
-              <span className="state-label">Emotional Indicator:</span>
-              <span className={`state-badge ${emotionalState.colorClass}`}>
-                {emotionalState.text}
+          <div className="state-card-compact">
+            <span className="state-card-title">Burnout Risk</span>
+            <div className="state-card-value-container">
+              <span className={`state-card-badge ${getBurnoutBadgeColor(result.currentState.burnoutRisk)}`}>
+                {result.currentState.burnoutRisk}
               </span>
             </div>
-            <p className="text-content" style={{ marginTop: "8px" }}>{result.emotionalSummary}</p>
+            <span className="state-card-sub">Based on energy & stress indicators</span>
           </div>
-        </section>
 
-        {/* Card 2: Hidden Stress Triggers */}
-        <section className="report-card">
-          <div className="card-header">
-            <AlertTriangle className="card-icon" aria-hidden="true" />
-            <h3>Hidden Stress Triggers</h3>
-          </div>
-          <div className="card-body">
-            <div className="risk-level-container">
-              <span className="risk-label">Wellbeing Status:</span>
-              <span className={`risk-badge ${getRiskBadgeColor(result.riskAssessment.level)}`}>
-                {result.riskAssessment.level}
+          <div className="state-card-compact">
+            <span className="state-card-title">Confidence Trend</span>
+            <div className="state-card-value-container">
+              <span className={`state-card-badge ${getTrendBadgeColor(result.currentState.confidenceTrend)}`}>
+                {result.currentState.confidenceTrend}
               </span>
             </div>
-            <p className="risk-reasoning" style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
-              {result.riskAssessment.reasoning}
+            <span className="state-card-sub">Direction of academic confidence</span>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 2: Most Important Discovery - Root Cause Analysis (Hero Card) */}
+      <section className="root-cause-hero-section">
+        <h3 className="section-title-label">Most Important Discovery</h3>
+        <div className="root-cause-hero-card">
+          <div className="hero-card-header">
+            <div className="root-cause-badge">Primary Root Cause</div>
+            <h4 className="root-cause-title">{result.rootCauseAnalysis.primaryRootCause}</h4>
+            <p className="root-cause-meta-desc">
+              Your biggest source of stress is not exam difficulty. FreeMind found this pattern repeating across your journal history.
             </p>
-            {result.detectedTriggers.length > 0 ? (
-              <ul className="triggers-list">
-                {result.detectedTriggers.map((trigger, idx) => (
-                  <li key={idx} className="trigger-item">
-                    {trigger}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="no-data">No hidden triggers detected in this journal entry.</p>
-            )}
           </div>
-        </section>
 
-        {/* Card 3: Behavior Patterns */}
-        <section className="report-card full-width">
-          <div className="card-header">
-            <TrendingUp className="card-icon" aria-hidden="true" />
-            <h3>Behavior Patterns</h3>
-          </div>
-          <div className="card-body">
-            <p className="text-content">{result.patternAnalysis}</p>
-          </div>
-        </section>
-
-        {/* Card 4: Today's Support Plan */}
-        <section className="report-card full-width">
-          <div className="card-header">
-            <Heart className="card-icon" aria-hidden="true" />
-            <h3>Today's Support Plan</h3>
-          </div>
-          <div className="card-body">
-            <ul className="coping-list">
-              {result.copingStrategies.map((strategy, idx) => (
-                <li key={idx} className="coping-item">
-                  <span className="coping-number">{idx + 1}</span>
-                  <p>{strategy}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* Card 5: Motivation Coach */}
-        <section className="report-card full-width motivation-card">
-          <div className="card-header">
-            <BookOpen className="card-icon" aria-hidden="true" />
-            <h3>Motivation Coach</h3>
-          </div>
-          <div className="card-body">
-            <blockquote className="motivation-quote">
-              <p>"{result.motivation}"</p>
-            </blockquote>
-          </div>
-        </section>
-
-        {/* Card 6: Action Roadmap */}
-        <section className="report-card full-width">
-          <div className="card-header">
-            <Calendar className="card-icon" aria-hidden="true" />
-            <h3>Action Roadmap</h3>
-          </div>
-          <div className="card-body">
-            <div className="action-plan-timeline">
-              <div className="timeline-item">
-                <div className="timeline-badge today">Today</div>
-                <div className="timeline-content">
-                  <h4>Immediate Micro-step</h4>
-                  <p>{result.actionPlan.today}</p>
-                </div>
-              </div>
-              <div className="timeline-item">
-                <div className="timeline-badge week">This Week</div>
-                <div className="timeline-content">
-                  <h4>Weekly Improvement Goal</h4>
-                  <p>{result.actionPlan.thisWeek}</p>
-                </div>
-              </div>
-              <div className="timeline-item">
-                <div className="timeline-badge exam">Before Exam</div>
-                <div className="timeline-content">
-                  <h4>Exam Day preparation Advice</h4>
-                  <p>{result.actionPlan.beforeExam}</p>
-                </div>
-              </div>
+          <div className="root-cause-stats-grid">
+            <div className="root-cause-stat">
+              <span className="stat-label">Confidence Impact</span>
+              <span className={`stat-value-badge impact-${result.rootCauseAnalysis.confidenceImpact.toLowerCase()}`}>
+                {result.rootCauseAnalysis.confidenceImpact} Impact
+              </span>
+            </div>
+            <div className="root-cause-stat">
+              <span className="stat-label">Observed In</span>
+              <span className="stat-value-text">{result.rootCauseAnalysis.observedIn}</span>
             </div>
           </div>
-        </section>
-      </div>
+
+          {/* Typical Trigger Sequence */}
+          {result.rootCauseAnalysis.typicalTriggerSequence && result.rootCauseAnalysis.typicalTriggerSequence.length > 0 && (
+            <div className="trigger-sequence-flow">
+              <span className="sequence-label">Typical Trigger Sequence Flow</span>
+              <div className="sequence-steps-container">
+                {result.rootCauseAnalysis.typicalTriggerSequence.map((step, idx) => (
+                  <div key={idx} className="sequence-step-wrapper">
+                    <div className="sequence-step">
+                      <span className="step-num">{idx + 1}</span>
+                      <span className="step-text">{step}</span>
+                    </div>
+                    {idx < result.rootCauseAnalysis.typicalTriggerSequence.length - 1 && (
+                      <ArrowRight size={14} className="sequence-arrow" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pattern Confidence */}
+          <div className="pattern-confidence-bar-container">
+            <div className="confidence-label-row">
+              <span className="confidence-label">FreeMind Confidence</span>
+              <span className="confidence-percentage">{result.rootCauseAnalysis.patternConfidence.percentage}%</span>
+            </div>
+            <div className="confidence-progress-bg">
+              <div 
+                className="confidence-progress-fill" 
+                style={{ width: `${result.rootCauseAnalysis.patternConfidence.percentage}%` }}
+              ></div>
+            </div>
+            <p className="confidence-reason">{result.rootCauseAnalysis.patternConfidence.reason}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: Why FreeMind Believes This (Evidence) */}
+      <section className="evidence-section">
+        <h3 className="section-title-label">Why FreeMind Believes This</h3>
+        <div className="evidence-card">
+          <ul className="evidence-list-new">
+            {result.evidence.map((point, index) => (
+              <li key={index} className="evidence-item-new">
+                <Info size={16} className="evidence-icon-bullet" />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* SECTION 4: What To Do Next (Intervention Forecast & Action Plan) */}
+      <section className="intervention-section">
+        <h3 className="section-title-label">Guided Intervention & Action Plan</h3>
+        
+        <div className="forecast-box">
+          <div className="forecast-header">
+            <ShieldAlert size={18} className="forecast-icon" />
+            <h4>If this pattern continues (Forecast)</h4>
+          </div>
+          <p className="forecast-expected">{result.interventionForecast.expectedOutcome}</p>
+          <div className="forecast-suggested-box">
+            <span className="suggested-tag">Suggested Intervention</span>
+            <p className="suggested-intervention-text">{result.interventionForecast.suggestedIntervention}</p>
+          </div>
+        </div>
+
+        <div className="action-plan-timeline-new">
+          <div className="action-timeline-item">
+            <div className="action-timeline-badge immediate">Immediate Action</div>
+            <div className="action-timeline-content">
+              <p>{result.whatToDoNext.immediateAction}</p>
+            </div>
+          </div>
+          <div className="action-timeline-item">
+            <div className="action-timeline-badge week">Next 7 Days</div>
+            <div className="action-timeline-content">
+              <p>{result.whatToDoNext.next7Days}</p>
+            </div>
+          </div>
+          <div className="action-timeline-item">
+            <div className="action-timeline-badge long-term">Long-Term Adjustment</div>
+            <div className="action-timeline-content">
+              <p>{result.whatToDoNext.longTermAdjustment}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5: Coach Reflection */}
+      <section className="coach-reflection-section">
+        <div className="coach-reflection-card">
+          <div className="coach-avatar">
+            <Sparkles size={18} className="coach-avatar-icon" />
+          </div>
+          <blockquote className="coach-blockquote">
+            <p>"{result.coachReflection}"</p>
+            <cite className="coach-cite">— FreeMind AI Coach</cite>
+          </blockquote>
+        </div>
+      </section>
 
       <div className="report-footer-reset">
         <button
           onClick={onReset}
           className="btn btn-primary btn-large"
-          aria-label="Start a new daily scanning session"
+          aria-label="Reset Pattern intelligence report"
         >
           <RefreshCw className="btn-icon" aria-hidden="true" />
-          <span>Scan Another Entry</span>
+          <span>Reset Pattern Analysis</span>
         </button>
       </div>
     </div>

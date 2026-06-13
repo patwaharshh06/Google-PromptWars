@@ -1,154 +1,71 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { JournalInput } from "./validation";
+import type { PatternAnalysisRequest } from "./validation";
+
+export interface CurrentState {
+  emotionalHealthScore: number;
+  burnoutRisk: "Low" | "Moderate" | "High";
+  confidenceTrend: "Stable" | "Improving" | "Declining";
+}
+
+export interface PatternConfidence {
+  percentage: number;
+  reason: string;
+}
+
+export interface RootCauseAnalysis {
+  primaryRootCause: string;
+  confidenceImpact: "Low" | "Medium" | "High";
+  observedIn: string;
+  typicalTriggerSequence: string[];
+  patternConfidence: PatternConfidence;
+}
+
+export interface InterventionForecast {
+  expectedOutcome: string;
+  suggestedIntervention: string;
+}
+
+export interface WhatToDoNext {
+  immediateAction: string;
+  next7Days: string;
+  longTermAdjustment: string;
+}
 
 export interface AnalysisResult {
-  emotionalSummary: string;
-  detectedTriggers: string[];
-  patternAnalysis: string;
-  riskAssessment: {
-    level: "Low Risk" | "Moderate Risk" | "High Risk";
-    reasoning: string;
-  };
-  copingStrategies: string[];
-  motivation: string;
-  actionPlan: {
-    today: string;
-    thisWeek: string;
-    beforeExam: string;
-  };
+  currentState: CurrentState;
+  rootCauseAnalysis: RootCauseAnalysis;
+  evidence: string[];
+  interventionForecast: InterventionForecast;
+  whatToDoNext: WhatToDoNext;
+  coachReflection: string;
   distressWarningDetected: boolean;
 }
 
-const SYSTEM_INSTRUCTION = `You are FreeMind, a compassionate, intelligent, and emotionally aware digital companion for students preparing for high-pressure competitive exams (like JEE, NEET, UPSC, CAT, CUET, GATE).
-Your role is to analyze journal entries and study metrics to provide deep emotional awareness, trigger identification, pattern analysis, and highly personalized, calming, and practical action plans.
-
-Key Analysis Areas:
-1. Identify hidden stress triggers (performance pressure, mock test fluctuations, syllabus load, time constraints).
-2. Spot self-doubt patterns (imposter syndrome, fear of failure, feeling left behind).
-3. Detect burnout indicators (physical/mental exhaustion, stamina loss, fatigue, study-hours disconnect).
-4. Highlight peer comparison behaviors (comparing ranks, scores, or syllabus progress with peers).
-5. Recognize procrastination signals (avoidance, freezing, anxiety-driven delays).
-
-Strict Safety & Ethical Guidelines:
-1. You are a wellness companion, NOT a medical doctor, counselor, or therapist.
-2. NEVER diagnose any mental illness or clinical condition.
-3. NEVER claim to be a doctor, and never provide clinical or medical advice.
-4. If severe distress indicators (e.g. self-harm thoughts, extreme hopelessness, panic attacks, clinical depression signs, severe trauma) are detected, set "distressWarningDetected" to true and include a gentle, warm, and clear support card reference.
-5. Provide realistic, grounded encouragement. Avoid toxic positivity or exaggerated claims.
-
-Return your response strictly as a single JSON object matching this schema:
-{
-  "emotionalSummary": "A concise, empathetic, and highly personalized summary of the student's emotional state, explaining the connection between their mood/energy/stress scores and journal text.",
-  "detectedTriggers": ["specific trigger 1", "specific trigger 2", ...],
-  "patternAnalysis": "Analysis of recurring themes, comparison loops, self-doubt patterns, or procrastination triggers observed in their journal.",
-  "riskAssessment": {
-    "level": "Low Risk" | "Moderate Risk" | "High Risk",
-    "reasoning": "Detailed reasoning for this classification based on their input scores and qualitative journal entry."
-  },
-  "copingStrategies": [
-    "highly practical, contextual coping action 1",
-    "highly practical, contextual coping action 2",
-    ...
-  ],
-  "motivation": "A realistic, deeply encouraging, and warm message from you as their coach.",
-  "actionPlan": {
-    "today": "One small, immediate action they can take today (e.g., a 10-minute walk, 5-minute deep breathing, reviewing one specific mistake).",
-    "thisWeek": "One improvement action they can take this week (e.g., establishing a sleep time, scheduling one revision session).",
-    "beforeExam": "One long-term recommendation for their preparation or mindset before the exam day."
-  },
-  "distressWarningDetected": boolean
-}`;
-
-export function getApiKey(): string | null {
-  const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (envKey && envKey.trim() !== "" && envKey !== "YOUR_API_KEY_HERE") {
-    return envKey;
-  }
-  return localStorage.getItem("freemind_api_key") || localStorage.getItem("exammind_api_key");
-}
-
-export function saveApiKey(key: string): void {
-  localStorage.setItem("freemind_api_key", key);
-}
-
-export function clearApiKey(): void {
-  localStorage.removeItem("freemind_api_key");
-  localStorage.removeItem("exammind_api_key");
-}
-
-export function buildPrompt(input: JournalInput): string {
-  return `Analyze the following student wellbeing details:
-- Student Name: ${input.name || "Anonymous student"}
-- Exam Preparing For: ${input.examType}
-- Days Remaining Until Exam: ${input.daysRemaining} days
-- Mood Score (1-10): ${input.moodScore} (where 10 is excellent, 1 is extremely low)
-- Energy Score (1-10): ${input.energyScore} (where 10 is full of energy, 1 is exhausted)
-- Stress Level (1-10): ${input.stressScore} (where 10 is high stress, 1 is calm)
-
-Daily Journal Entry:
-"${input.journalEntry}"
-
-Provide the structured mental wellness feedback report in the requested JSON format. Ensure all advice aligns with your guidelines (non-diagnostic, non-medical, and offers distress helpline references if distressWarningDetected is true).`;
-}
-
-export async function analyzeWellbeing(input: JournalInput): Promise<AnalysisResult> {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    throw new Error(
-      "API Key Missing: Please set VITE_GEMINI_API_KEY in your environment, or configure it in the app settings."
-    );
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json",
+export async function analyzeWellbeing(input: PatternAnalysisRequest): Promise<AnalysisResult> {
+  const response = await fetch("/api/analyze", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-    systemInstruction: SYSTEM_INSTRUCTION,
+    body: JSON.stringify(input),
   });
 
-  const prompt = buildPrompt(input);
+  if (!response.ok) {
+    let errorMessage = "FreeMind is temporarily unavailable. Please try again in a few minutes.";
+    try {
+      const errJson = await response.json();
+      if (errJson && errJson.error) {
+        errorMessage = errJson.error;
+      }
+    } catch {
+      // Ignored: fallback to generic message
+    }
+    throw new Error(errorMessage);
+  }
 
   try {
-    const response = await model.generateContent(prompt);
-    const text = response.response.text();
-    
-    if (!text) {
-      throw new Error("Received an empty response from Gemini API.");
-    }
-
-    try {
-      const parsed: AnalysisResult = JSON.parse(text);
-      
-      // Basic runtime structural checks
-      if (
-        typeof parsed.emotionalSummary !== "string" ||
-        !Array.isArray(parsed.detectedTriggers) ||
-        typeof parsed.patternAnalysis !== "string" ||
-        !parsed.riskAssessment ||
-        !["Low Risk", "Moderate Risk", "High Risk"].includes(parsed.riskAssessment.level) ||
-        !Array.isArray(parsed.copingStrategies) ||
-        typeof parsed.motivation !== "string" ||
-        !parsed.actionPlan ||
-        typeof parsed.actionPlan.today !== "string" ||
-        typeof parsed.actionPlan.thisWeek !== "string" ||
-        typeof parsed.actionPlan.beforeExam !== "string"
-      ) {
-        throw new Error("API response JSON structure is invalid or incomplete.");
-      }
-
-      return parsed;
-    } catch (parseError) {
-      console.error("JSON parsing error:", parseError, "Raw response:", text);
-      throw new Error("Failed to parse analysis report. The model output did not match the expected format.", { cause: parseError });
-    }
-  } catch (apiError) {
-    console.error("Gemini API error:", apiError);
-    const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
-    if (errorMessage.includes("API_KEY_INVALID")) {
-      throw new Error("Invalid API Key: The Gemini API key provided is not valid. Please check it and try again.", { cause: apiError });
-    }
-    throw new Error(errorMessage || "An unexpected error occurred while communicating with the Gemini AI.", { cause: apiError });
+    const data: AnalysisResult = await response.json();
+    return data;
+  } catch (parseError) {
+    throw new Error("FreeMind is temporarily unavailable. Please try again in a few minutes.", { cause: parseError });
   }
 }

@@ -83,6 +83,16 @@ export function JournalForm({ onSubmit, isLoading }: JournalFormProps) {
 
     // Submit validated data
     onSubmit(submissionData as JournalInput);
+
+    // Reset daily logged values
+    setFormData((prev) => ({
+      ...prev,
+      moodScore: undefined,
+      energyScore: undefined,
+      stressScore: undefined,
+      journalEntry: "",
+    }));
+    setErrors({});
   };
 
   const renderScoreRadioGroup = (
@@ -155,6 +165,16 @@ export function JournalForm({ onSubmit, isLoading }: JournalFormProps) {
     );
   };
 
+  const calculateProgress = () => {
+    let completed = 0;
+    if (formData.daysRemaining !== undefined && !isNaN(formData.daysRemaining) && formData.daysRemaining >= 0) completed++;
+    if (formData.moodScore !== undefined) completed++;
+    if (formData.energyScore !== undefined) completed++;
+    if (formData.stressScore !== undefined) completed++;
+    if (formData.journalEntry && formData.journalEntry.trim().length >= 10) completed++;
+    return Math.round((completed / 5) * 100);
+  };
+
   return (
     <div className="homepage-wrapper">
       <section className="hero-section" aria-labelledby="hero-title">
@@ -165,25 +185,35 @@ export function JournalForm({ onSubmit, isLoading }: JournalFormProps) {
         <div className="hero-features">
           <div className="feature-pill">
             <Activity className="feature-icon stress" aria-hidden="true" />
-            <span>Stress Awareness</span>
+            <span>stress awareness</span>
           </div>
           <div className="feature-pill">
             <Battery className="feature-icon energy" aria-hidden="true" />
-            <span>Burnout Prevention</span>
+            <span>burnout prevention</span>
           </div>
           <div className="feature-pill">
             <Brain className="feature-icon mood" aria-hidden="true" />
-            <span>Pattern Tracking</span>
+            <span>emotional pattern tracking</span>
           </div>
           <div className="feature-pill">
             <Sparkles className="feature-icon sparks" aria-hidden="true" />
-            <span>Personalized Support</span>
+            <span>personalized support</span>
           </div>
         </div>
       </section>
 
       <form onSubmit={handleSubmit} className="journal-form" noValidate>
         <h2>Daily Wellbeing Entry</h2>
+        
+        <div className="form-progress-container">
+          <div className="form-progress-header">
+            <span>Wellbeing Log Completion</span>
+            <span className="progress-percent">{calculateProgress()}%</span>
+          </div>
+          <div className="form-progress-bar-bg">
+            <div className="form-progress-bar-fill" style={{ width: `${calculateProgress()}%` }}></div>
+          </div>
+        </div>
         
         {/* Section 1: Your Exam Journey */}
         <div className="form-section">
@@ -359,20 +389,11 @@ export function JournalForm({ onSubmit, isLoading }: JournalFormProps) {
 
         <button
           type="submit"
-          className={`btn btn-primary submit-btn ${isLoading ? "loading" : ""}`}
+          className="btn btn-primary submit-btn"
           disabled={isLoading}
         >
-          {isLoading ? (
-            <>
-              <span className="spinner" aria-hidden="true"></span>
-              <span>Analyzing Your Wellbeing...</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="submit-icon" aria-hidden="true" />
-              <span>Analyze My Wellbeing</span>
-            </>
-          )}
+          <Sparkles className="submit-icon" aria-hidden="true" />
+          <span>Save Entry to History</span>
         </button>
       </form>
     </div>
