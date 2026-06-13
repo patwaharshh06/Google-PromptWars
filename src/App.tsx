@@ -10,6 +10,7 @@ import { AlertCircle, AlertTriangle } from "lucide-react";
 export function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [scanInput, setScanInput] = useState<JournalInput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [apiKeyMissing, setApiKeyMissing] = useState(() => !getApiKey());
 
@@ -24,6 +25,7 @@ export function App() {
   const handleSubmit = async (data: JournalInput) => {
     setIsLoading(true);
     setError(null);
+    setScanInput(data);
     try {
       const analysis = await analyzeWellbeing(data);
       setResult(analysis);
@@ -45,6 +47,7 @@ export function App() {
 
   const handleReset = () => {
     setResult(null);
+    setScanInput(null);
     setError(null);
     // Scroll back to page top
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -81,16 +84,16 @@ export function App() {
         )}
 
         {result ? (
-          <AnalysisReport result={result} onReset={handleReset} />
+          <AnalysisReport result={result} scanInput={scanInput} onReset={handleReset} />
         ) : (
           <JournalForm onSubmit={handleSubmit} isLoading={isLoading} />
         )}
       </main>
 
       <footer style={{ marginTop: "40px", textAlign: "center", fontSize: "12px", color: "var(--text-muted)", borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
-        <p>© {new Date().getFullYear()} ExamMind AI. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} FreeMind. All rights reserved.</p>
         <p style={{ marginTop: "4px" }}>
-          EXAMMIND AI is an AI mental companion. It does not diagnose mental illness or provide medical clinical advice.
+          FreeMind is an AI mental companion. It does not diagnose mental illness or provide medical clinical advice.
         </p>
       </footer>
     </div>

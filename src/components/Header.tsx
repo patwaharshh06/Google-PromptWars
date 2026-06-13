@@ -37,7 +37,7 @@ export function Header() {
       <div className="header-container">
         <div className="header-logo" aria-label="ExamMind AI logo">
           <Brain className="logo-icon" aria-hidden="true" />
-          <h1>EXAMMIND AI</h1>
+          <h1>FreeMind</h1>
         </div>
         <p className="header-subtitle">
           Your personalized AI mental wellness companion for competitive exams preparation
@@ -71,7 +71,7 @@ export function Header() {
             
             <form onSubmit={handleSave} className="settings-form">
               <p className="settings-desc">
-                ExamMind AI uses **Gemini 1.5 Flash** to perform emotional analysis.
+                FreeMind uses **Gemini 1.5 Flash** to perform emotional analysis.
               </p>
 
               {hasEnvKey ? (

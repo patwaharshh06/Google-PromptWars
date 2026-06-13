@@ -1,27 +1,29 @@
 import { useState } from "react";
 import type { AnalysisResult } from "../utils/gemini";
+import type { JournalInput } from "../utils/validation";
 import { 
   AlertTriangle, 
   Smile, 
   TrendingUp, 
-  ShieldAlert, 
   Heart, 
   Calendar, 
   RefreshCw,
   Copy,
-  Check
+  Check,
+  BookOpen
 } from "lucide-react";
 
 interface AnalysisReportProps {
   result: AnalysisResult;
+  scanInput: JournalInput | null;
   onReset: () => void;
 }
 
-export function AnalysisReport({ result, onReset }: AnalysisReportProps) {
+export function AnalysisReport({ result, scanInput, onReset }: AnalysisReportProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    const textToCopy = `EXAMMIND AI - WELLBEING ANALYSIS REPORT
+    const textToCopy = `FREEMIND WELLBEING REPORT
 =========================================
 EMOTIONAL SUMMARY:
 ${result.emotionalSummary}
@@ -39,10 +41,10 @@ Reasoning: ${result.riskAssessment.reasoning}
 COPING STRATEGIES:
 ${result.copingStrategies.map((s) => `- ${s}`).join("\n")}
 
-MOTIVATION & ENCOURAGEMENT:
+MOTIVATION COACH:
 ${result.motivation}
 
-ACTION PLAN:
+ACTION ROADMAP:
 - Today: ${result.actionPlan.today}
 - This Week: ${result.actionPlan.thisWeek}
 - Before Exam: ${result.actionPlan.beforeExam}
@@ -70,10 +72,33 @@ ACTION PLAN:
     }
   };
 
+  const getEmotionalStateIndicator = (level: "Low Risk" | "Moderate Risk" | "High Risk") => {
+    switch (level) {
+      case "Low Risk":
+        return { text: "Calm & Focused", colorClass: "state-calm" };
+      case "Moderate Risk":
+        return { text: "Unsettled & Stressed", colorClass: "state-unsettled" };
+      case "High Risk":
+        return { text: "Highly Strained / Overloaded", colorClass: "state-strained" };
+      default:
+        return { text: "Stable", colorClass: "" };
+    }
+  };
+
+  const emotionalState = getEmotionalStateIndicator(result.riskAssessment.level);
+
   return (
-    <div className="analysis-report" role="region" aria-label="AI Analysis Report">
+    <div className="analysis-report" role="region" aria-label="FreeMind Wellness Report">
+      
       <div className="report-header">
-        <h2>Your Wellbeing Analysis Report</h2>
+        <div>
+          <h2>Your Personal Wellbeing Report</h2>
+          {scanInput && (
+            <p className="report-meta">
+              Prepared for {scanInput.name || "Anonymous Student"} • {scanInput.examType} Exam ({scanInput.daysRemaining} days left)
+            </p>
+          )}
+        </div>
         <div className="report-actions">
           <button
             onClick={handleCopy}
@@ -135,42 +160,79 @@ ACTION PLAN:
         </div>
       )}
 
+      {/* Wellness Score Visualization (Lightweight visual metrics bars) */}
+      {scanInput && (
+        <section className="wellness-scores-overview" aria-label="Wellbeing Scores Overview">
+          <div className="overview-header">
+            <h3>Daily Metrics Overview</h3>
+            <p className="overview-sub">Visual representation of your self-scored metrics</p>
+          </div>
+          <div className="overview-grid">
+            <div className="overview-metric-card mood">
+              <div className="metric-info">
+                <span className="metric-name">Mood State</span>
+                <span className="metric-val">{scanInput.moodScore} / 10</span>
+              </div>
+              <div className="metric-bar-bg">
+                <div className="metric-bar-fill" style={{ width: `${scanInput.moodScore * 10}%` }}></div>
+              </div>
+            </div>
+            <div className="overview-metric-card energy">
+              <div className="metric-info">
+                <span className="metric-name">Energy & Stamina</span>
+                <span className="metric-val">{scanInput.energyScore} / 10</span>
+              </div>
+              <div className="metric-bar-bg">
+                <div className="metric-bar-fill" style={{ width: `${scanInput.energyScore * 10}%` }}></div>
+              </div>
+            </div>
+            <div className="overview-metric-card stress">
+              <div className="metric-info">
+                <span className="metric-name">Preparation Stress</span>
+                <span className="metric-val">{scanInput.stressScore} / 10</span>
+              </div>
+              <div className="metric-bar-bg">
+                <div className="metric-bar-fill" style={{ width: `${scanInput.stressScore * 10}%` }}></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <div className="report-grid">
-        {/* Risk Assessment & Mood Status */}
-        <section className="report-card status-card">
+        {/* Card 1: Mental Snapshot */}
+        <section className="report-card">
           <div className="card-header">
-            <ShieldAlert className="card-icon" aria-hidden="true" />
-            <h3>Risk Assessment</h3>
+            <Smile className="card-icon" aria-hidden="true" />
+            <h3>Mental Snapshot</h3>
+          </div>
+          <div className="card-body">
+            <div className="emotional-state-container">
+              <span className="state-label">Emotional Indicator:</span>
+              <span className={`state-badge ${emotionalState.colorClass}`}>
+                {emotionalState.text}
+              </span>
+            </div>
+            <p className="text-content" style={{ marginTop: "8px" }}>{result.emotionalSummary}</p>
+          </div>
+        </section>
+
+        {/* Card 2: Hidden Stress Triggers */}
+        <section className="report-card">
+          <div className="card-header">
+            <AlertTriangle className="card-icon" aria-hidden="true" />
+            <h3>Hidden Stress Triggers</h3>
           </div>
           <div className="card-body">
             <div className="risk-level-container">
-              <span className="risk-label">Classification:</span>
+              <span className="risk-label">Wellbeing Status:</span>
               <span className={`risk-badge ${getRiskBadgeColor(result.riskAssessment.level)}`}>
                 {result.riskAssessment.level}
               </span>
             </div>
-            <p className="risk-reasoning">{result.riskAssessment.reasoning}</p>
-          </div>
-        </section>
-
-        {/* Emotional Summary */}
-        <section className="report-card">
-          <div className="card-header">
-            <Smile className="card-icon" aria-hidden="true" />
-            <h3>Emotional Summary</h3>
-          </div>
-          <div className="card-body">
-            <p className="text-content">{result.emotionalSummary}</p>
-          </div>
-        </section>
-
-        {/* Trigger Detection */}
-        <section className="report-card">
-          <div className="card-header">
-            <AlertTriangle className="card-icon" aria-hidden="true" />
-            <h3>Detected Triggers</h3>
-          </div>
-          <div className="card-body">
+            <p className="risk-reasoning" style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "8px" }}>
+              {result.riskAssessment.reasoning}
+            </p>
             {result.detectedTriggers.length > 0 ? (
               <ul className="triggers-list">
                 {result.detectedTriggers.map((trigger, idx) => (
@@ -180,27 +242,27 @@ ACTION PLAN:
                 ))}
               </ul>
             ) : (
-              <p className="no-data">No specific triggers detected in the journal entry.</p>
+              <p className="no-data">No hidden triggers detected in this journal entry.</p>
             )}
           </div>
         </section>
 
-        {/* Pattern Analysis */}
-        <section className="report-card">
+        {/* Card 3: Behavior Patterns */}
+        <section className="report-card full-width">
           <div className="card-header">
             <TrendingUp className="card-icon" aria-hidden="true" />
-            <h3>Emotional Patterns</h3>
+            <h3>Behavior Patterns</h3>
           </div>
           <div className="card-body">
             <p className="text-content">{result.patternAnalysis}</p>
           </div>
         </section>
 
-        {/* Coping Strategies */}
+        {/* Card 4: Today's Support Plan */}
         <section className="report-card full-width">
           <div className="card-header">
             <Heart className="card-icon" aria-hidden="true" />
-            <h3>Personalized Coping Strategies</h3>
+            <h3>Today's Support Plan</h3>
           </div>
           <div className="card-body">
             <ul className="coping-list">
@@ -214,11 +276,11 @@ ACTION PLAN:
           </div>
         </section>
 
-        {/* Motivation */}
+        {/* Card 5: Motivation Coach */}
         <section className="report-card full-width motivation-card">
           <div className="card-header">
-            <Heart className="card-icon" aria-hidden="true" />
-            <h3>Encouragement & Mindset</h3>
+            <BookOpen className="card-icon" aria-hidden="true" />
+            <h3>Motivation Coach</h3>
           </div>
           <div className="card-body">
             <blockquote className="motivation-quote">
@@ -227,32 +289,32 @@ ACTION PLAN:
           </div>
         </section>
 
-        {/* Action Plan */}
+        {/* Card 6: Action Roadmap */}
         <section className="report-card full-width">
           <div className="card-header">
             <Calendar className="card-icon" aria-hidden="true" />
-            <h3>Mindful Action Plan</h3>
+            <h3>Action Roadmap</h3>
           </div>
           <div className="card-body">
             <div className="action-plan-timeline">
               <div className="timeline-item">
                 <div className="timeline-badge today">Today</div>
                 <div className="timeline-content">
-                  <h4>One Small Step</h4>
+                  <h4>Immediate Micro-step</h4>
                   <p>{result.actionPlan.today}</p>
                 </div>
               </div>
               <div className="timeline-item">
                 <div className="timeline-badge week">This Week</div>
                 <div className="timeline-content">
-                  <h4>Improvement Action</h4>
+                  <h4>Weekly Improvement Goal</h4>
                   <p>{result.actionPlan.thisWeek}</p>
                 </div>
               </div>
               <div className="timeline-item">
                 <div className="timeline-badge exam">Before Exam</div>
                 <div className="timeline-content">
-                  <h4>Preparation Strategy</h4>
+                  <h4>Exam Day preparation Advice</h4>
                   <p>{result.actionPlan.beforeExam}</p>
                 </div>
               </div>
